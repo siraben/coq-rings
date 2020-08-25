@@ -185,6 +185,8 @@ Section rings.
     | S n' => a <*> expt a n'
     end.
 
+  Notation "x <^> y" := (expt x y) (at level 25, left associativity).
+
   Lemma thm_1_1_3_1 : forall (a : R) n m, expt a n <*> expt a m = expt a (n + m).
   Proof.
     intros a n.
@@ -204,7 +206,7 @@ Section rings.
 
   Hint Rewrite expt_I : ring_scope.
 
-  Lemma thm_1_1_3_2 : forall (a : R) n m, expt (expt a n) m = expt a (n * m).
+  Lemma thm_1_1_3_2 : forall (a : R) n m, a <^> n <^> m = a <^> (n * m).
   Proof.
     intros a n m.
     induction m; simpl.
@@ -216,4 +218,62 @@ Section rings.
 
   Hint Rewrite thm_1_1_3_2 : ring_scope.
 
+  Lemma expt_reorder : forall (a : R) n m o,
+      n = m + o -> a <^> n = a <^> m <*> a <^> o.
+  Proof.
+    intros a n m o H.
+    autorewrite with ring_scope. now rewrite <- H.
+  Qed.
+  
+  Lemma thm_1_1_4 : forall (a b : R) n,
+      a <*> b = b <*> a
+      -> (a <*> b) <^> n = a <^> n <*> b <^> n.
+  Proof.
+    intros.
+    induction n.
+    - now autorewrite with ring_scope.
+    - simpl.
+      rewrite <- (mul_assoc _ a (a <^> n) _).
+      rewrite (mul_assoc _ (a <^> n) _ _).
+      assert (forall n, a <^> n <*> b = b <*> a <^> n).
+      {
+        intros m.
+        induction m.
+        - now autorewrite with ring_scope.
+        - rewrite (expt_reorder a m 1).
+          simpl (a <^> 1).
+          autorewrite with ring_scope.
+          rewrite (mul_assoc _ b _ a).
+          rewrite <- IHm.
+          rewrite <- (mul_assoc _ _ b a).
+          rewrite <- H.
+          now rewrite mul_assoc.
+          symmetry.
+          apply Nat.add_1_r.
+      }
+      rewrite H0.
+      rewrite <- (mul_assoc _ b _ _).
+      rewrite (mul_assoc _ a b _).
+      now rewrite IHn.
+  Qed.
+
+  Definition division_ring (R: Ring) :=
+    forall (a : R), a <> z -> exists b, a <*> b = (I (r := R)) /\ b <*> a = (I (r := R)).
+
+  Definition commutative_ring (R: Ring) := is_commutative (mul (r := R)).
+
+  Lemma thm_1_4_c'' : forall (a b : R),
+      division_ring R -> a <*> b = z -> a <> z -> b = z.
+  Proof.
+    intros.
+    unfold division_ring in H.
+    destruct (H a H1).
+    destruct H2.
+    rewrite <- (mul_unit_l _ b).
+    rewrite <- H3.
+    rewrite <- mul_assoc.
+    rewrite H0.
+    now autorewrite with ring_scope.
+  Qed.
+  
 End rings.
