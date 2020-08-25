@@ -1,3 +1,4 @@
+Require Import Coq.Bool.Bool.
 Require Import Nat.
 Require Import PeanoNat.
 
@@ -6,29 +7,30 @@ Open Scope nat.
 Set Implicit Arguments.
 
 Section ring_definitions.
-  Definition is_assoc (A: Set) (f: A -> A -> A) := forall a b c,
+  Variable (A : Set).
+  Definition is_assoc (f: A -> A -> A) := forall a b c,
     f (f a b) c = f a (f b c).
 
-  Definition is_commutative (A: Set) (f: A -> A -> A) := forall a b, f a b = f b a.
+  Definition is_commutative (f: A -> A -> A) := forall a b, f a b = f b a.
 
-  Definition is_inverse (A: Set) (f: A -> A -> A) (inv: A -> A) (z: A) :=
+  Definition is_inverse (f: A -> A -> A) (inv: A -> A) (z: A) :=
     forall a,  f a (inv a) = z /\ f (inv a) a = z.
 
-  Definition is_unit (A: Set) (f: A -> A -> A) (z: A) := forall a, f a z = a /\ f z a = a.
+  Definition is_unit (f: A -> A -> A) (z: A) := forall a, f a z = a /\ f z a = a.
 
-  Definition add_monoid (A: Set) (add: A -> A -> A) (add_unit: A) :=
+  Definition add_monoid (add: A -> A -> A) (add_unit: A) :=
     (is_assoc add) /\ (is_unit add add_unit).
 
-  Definition mul_monoid (A: Set) (mul: A -> A -> A) (mul_unit: A) :=
+  Definition mul_monoid (mul: A -> A -> A) (mul_unit: A) :=
     (is_assoc mul) /\ (is_unit mul mul_unit).
 
-  Definition is_ldistr (A : Set) (mul: A -> A -> A) (add: A -> A -> A) :=
+  Definition is_ldistr (mul: A -> A -> A) (add: A -> A -> A) :=
     forall a b c, mul a (add b c) = add (mul a b) (mul a c).
 
-  Definition is_rdistr (A : Set) (mul: A -> A -> A) (add: A -> A -> A) :=
+  Definition is_rdistr  (mul: A -> A -> A) (add: A -> A -> A) :=
     forall a b c, mul (add a b) c = add (mul a c) (mul b c).
 
-  Definition is_ring (A: Set) (add: A -> A -> A) (mul: A -> A -> A)
+  Definition is_ring (add: A -> A -> A) (mul: A -> A -> A)
              (inv: A -> A) (add_unit: A) (mul_unit : A) :=
       add_monoid add add_unit
     /\ mul_monoid mul mul_unit
@@ -257,8 +259,11 @@ Section rings.
       now rewrite IHn.
   Qed.
 
+
+  Definition is_ring_unit {R : Ring} (a : R) := a <> z.
   Definition division_ring (R: Ring) :=
-    forall (a : R), a <> z -> exists b, a <*> b = (I (r := R)) /\ b <*> a = (I (r := R)).
+    forall (a : R), is_ring_unit a
+               -> exists b, a <*> b = (I (r := R)) /\ b <*> a = (I (r := R)).
 
   Definition commutative_ring (R: Ring) := is_commutative (mul (r := R)).
 
@@ -275,5 +280,108 @@ Section rings.
     rewrite H0.
     now autorewrite with ring_scope.
   Qed.
-  
+
+  Lemma thm_1_4_c''' : forall (a b : R),
+      division_ring R -> a <*> b = z -> a <> z -> b = z.
+  Proof.
+    intros.
+    unfold division_ring in H.
+    destruct (H a H1).
+    destruct H2.
+    rewrite <- (mul_unit_l _ b).
+    rewrite <- H3.
+    rewrite <- mul_assoc.
+    rewrite H0.
+    now autorewrite with ring_scope.
+  Qed.
+
+  Lemma coll_1_3_1 : forall (a b : R),
+      division_ring R -> is_ring_unit a -> a <*> b = z -> b = z.
+  Proof.
+    intros a b divRingR unitA abZ.
+    unfold division_ring in divRingR.
+    destruct (divRingR a unitA) as [aInv [abI baI]].
+    apply thm_1_4_c'' with (a := a); easy.
+  Qed.
+
+  Lemma coll_1_3 : forall (a b c : R),
+      division_ring R -> is_ring_unit a -> a <*> b = a <*> c -> b = c.
+  Proof.
+    intros a b c divRingR unitA abEqac.
+    unfold division_ring in divRingR.
+    destruct (divRingR a unitA) as [aInv [abI baI]].
+    rewrite <- (mul_unit_l _ b).
+    rewrite <- (mul_unit_l _ c).
+    rewrite <- baI.
+    rewrite <- !mul_assoc.
+    congruence.
+  Qed.
+
+  Section subrings.
+    Definition set (A : Set) := A -> bool.
+
+    Definition is_mem (A: Set) (H: set A) (a : A) := H a = true.
+
+    Arguments is_mem {A} _ _.
+
+    Theorem is_mem_dec (A : Set) (H : set A) :
+      forall a, { is_mem H a } +  { ~(is_mem H a) }.
+      unfold is_mem. intros a.
+      apply (bool_dec (H a)).
+    Qed.
+
+    Theorem is_mem_contradict (A : Set) (H : set A) :
+      forall a, is_mem H a -> ~is_mem H a -> False.
+      intros a; auto.
+    Qed.
+
+    Theorem is_mem_not (A : Set) (H : set A):
+      forall a, ~is_mem H a <-> (H a) = false.
+      intros a.
+      unfold is_mem.
+      rewrite <- not_true_iff_false.
+      reflexivity.
+    Qed.
+
+    Structure subring (R : Ring) : Type := makeSubring
+    {
+      subring_mem :> set R;
+      subring_I : is_mem subring_mem I;
+      subring_closed_mul :
+        forall a b, is_mem subring_mem a /\ is_mem subring_mem b
+               -> is_mem subring_mem (a <*> b);
+      subring_closed_add :
+        forall a b, is_mem subring_mem a /\ is_mem subring_mem b
+               -> is_mem subring_mem (a <+> b);
+      subring_inverse :
+        forall a, is_mem subring_mem a -> is_mem subring_mem (inv a)
+    }.
+
+
+    Lemma subring_closed1: forall (H: subring R) (a b : R),
+        is_mem H a -> is_mem H b -> is_mem H (a <*> b).
+    Proof.
+      intros; now apply subring_closed_mul.
+    Qed.
+
+    Lemma subring_closed2: forall (H : subring R) (a b : R),
+        is_mem H a -> is_mem H b -> is_mem H (b <*> a).
+    Proof.
+      intros; now apply subring_closed_mul.
+    Qed.
+
+    Lemma subring_closed3: forall (H: subring R) (a b : R),
+        is_mem H a -> is_mem H b -> is_mem H (a <+> b).
+    Proof.
+      intros; now apply subring_closed_add.
+    Qed.
+
+    Lemma subring_closed4: forall (H : subring R) (a b : R),
+        is_mem H a -> is_mem H b -> is_mem H (b <+> a).
+    Proof.
+      intros; now apply subring_closed_add.
+    Qed.
+
+    End subrings.
+    
 End rings.
