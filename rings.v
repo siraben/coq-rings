@@ -81,13 +81,13 @@ Section rings.
 
   Lemma thm_1_1_1_1 : forall (a : R), z <*> a = z.
   Proof.
-    intros.
-    assert (forall (x : R), x <+> x = x -> x = z).
+    intros a.
+    assert (H: forall (x : R), x <+> x = x -> x = z).
     {
-      intros.
-      rewrite <- H.
+      intros x xAddx.
+      rewrite <- xAddx.
       rewrite <- (add_inverse_r _ x).
-      rewrite <- H at 3.
+      rewrite <- xAddx at 3.
       rewrite <- add_assoc.
       rewrite (add_inverse_r R x).
       now autorewrite with ring_scope.
@@ -100,13 +100,13 @@ Section rings.
   Hint Rewrite thm_1_1_1_1 : ring_scope.
 
   Lemma thm_1_1_1_2 : forall (a : R), a <*> z = z.
-    intros.
-    assert (forall (x : R), x <+> x = x -> x = z).
+    intros a.
+    assert (H: forall (x : R), x <+> x = x -> x = z).
     {
-      intros.
-      rewrite <- H.
+      intros x xAddx.
+      rewrite <- xAddx.
       rewrite <- (add_inverse_r _ x).
-      rewrite <- H at 3.
+      rewrite <- xAddx at 3.
       rewrite <- add_assoc.
       rewrite (add_inverse_r R x).
       now autorewrite with ring_scope.
@@ -120,12 +120,12 @@ Section rings.
 
   Lemma thm_1_1_2_1 : forall (a : R), inv (inv a) = a.
   Proof.
-    intros.
-    assert (forall (x y : R), x <+> y = z -> y = inv x).
+    intros a.
+    assert (H: forall (x y : R), x <+> y = z -> y = inv x).
     {
-      intros.
+      intros x y xyCancel.
       rewrite <- (add_unit_l _ (inv x)).
-      rewrite <- H.
+      rewrite <- xyCancel.
       rewrite (add_comm _ x y).
       rewrite <- add_assoc.
       now autorewrite with ring_scope.
@@ -139,17 +139,17 @@ Section rings.
 
   Lemma thm_1_1_2_2_1 : forall (a b : R), a <*> (inv b) = inv (a <*> b).
   Proof.
-    intros.
-    assert (forall (x y : R), x <+> y = z -> y = inv x).
+    intros a b.
+    assert (H: forall (x y : R), x <+> y = z -> y = inv x).
     {
-      intros.
+      intros x y xyCancel.
       rewrite <- (add_unit_r _ (inv x)).
-      rewrite <- H.
+      rewrite <- xyCancel.
       rewrite add_assoc.
       now autorewrite with ring_scope.
     }
     apply H.
-    rewrite <- (mul_ldistr).
+    rewrite <- mul_ldistr.
     now autorewrite with ring_scope.
   Qed.
 
@@ -157,12 +157,12 @@ Section rings.
 
   Lemma thm_1_1_2_2_2 : forall (a b : R), inv a <*> b = inv (a <*> b).
   Proof.
-    intros.
-    assert (forall (x y : R), x <+> y = z -> y = inv x).
+    intros a b.
+    assert (H: forall (x y : R), x <+> y = z -> y = inv x).
     {
-      intros.
+      intros x y xyCancel.
       rewrite <- (add_unit_r _ (inv x)).
-      rewrite <- H.
+      rewrite <- xyCancel.
       rewrite add_assoc.
       now autorewrite with ring_scope.
     }
@@ -175,8 +175,7 @@ Section rings.
 
   Lemma thm_1_1_2_3 : forall (a b : R), inv a <*> inv b = a <*> b.
   Proof.
-    intros.
-    now autorewrite with ring_scope.
+    intros a b; now autorewrite with ring_scope.
   Qed.
 
   Hint Rewrite thm_1_1_2_3 : ring_scope.
@@ -201,9 +200,7 @@ Section rings.
 
   Lemma expt_I : forall n, expt I n = I.
   Proof.
-    induction n.
-    - easy.
-    - simpl. now autorewrite with ring_scope.
+    induction n; simpl; now autorewrite with ring_scope.
   Qed.
 
   Hint Rewrite expt_I : ring_scope.
@@ -231,13 +228,13 @@ Section rings.
       a <*> b = b <*> a
       -> (a <*> b) <^> n = a <^> n <*> b <^> n.
   Proof.
-    intros.
+    intros a b n abComm.
     induction n.
     - now autorewrite with ring_scope.
     - simpl.
       rewrite <- (mul_assoc _ a (a <^> n) _).
       rewrite (mul_assoc _ (a <^> n) _ _).
-      assert (forall n, a <^> n <*> b = b <*> a <^> n).
+      assert (H: forall n, a <^> n <*> b = b <*> a <^> n).
       {
         intros m.
         induction m.
@@ -248,12 +245,12 @@ Section rings.
           rewrite (mul_assoc _ b _ a).
           rewrite <- IHm.
           rewrite <- (mul_assoc _ _ b a).
-          rewrite <- H.
+          rewrite <- abComm.
           now rewrite mul_assoc.
           symmetry.
           apply Nat.add_1_r.
       }
-      rewrite H0.
+      rewrite H.
       rewrite <- (mul_assoc _ b _ _).
       rewrite (mul_assoc _ a b _).
       now rewrite IHn.
@@ -270,28 +267,26 @@ Section rings.
   Lemma thm_1_4_c'' : forall (a b : R),
       division_ring R -> a <*> b = z -> a <> z -> b = z.
   Proof.
-    intros.
-    unfold division_ring in H.
-    destruct (H a H1).
-    destruct H2.
+    intros a b divRingR abCancel aNz.
+    unfold division_ring in divRingR.
+    destruct (divRingR a aNz) as [x [axI xaI]].
     rewrite <- (mul_unit_l _ b).
-    rewrite <- H3.
+    rewrite <- xaI.
     rewrite <- mul_assoc.
-    rewrite H0.
+    rewrite abCancel.
     now autorewrite with ring_scope.
   Qed.
 
   Lemma thm_1_4_c''' : forall (a b : R),
       division_ring R -> a <*> b = z -> a <> z -> b = z.
   Proof.
-    intros.
-    unfold division_ring in H.
-    destruct (H a H1).
-    destruct H2.
+    intros a b divRingR abCancel aNz.
+    unfold division_ring in divRingR.
+    destruct (divRingR a aNz) as [x [axI xaI]].
     rewrite <- (mul_unit_l _ b).
-    rewrite <- H3.
+    rewrite <- xaI.
     rewrite <- mul_assoc.
-    rewrite H0.
+    rewrite abCancel.
     now autorewrite with ring_scope.
   Qed.
 
