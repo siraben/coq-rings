@@ -264,6 +264,17 @@ Section rings.
 
   Definition commutative_ring (R: Ring) := is_commutative (mul (r := R)).
 
+  Axiom thm_1_4_c : forall (a b : R),
+      division_ring R -> a <*> b = z -> a = z \/ b = z.
+
+  (* Lemma thm_1_4_c' : forall (a b : R), *)
+  (*     division_ring R -> a <> z /\ b <> z -> a <*> b <> z. *)
+  (* Proof. *)
+  (*   intros a b divRingR abNcancel. *)
+  (*   destruct abNcancel. *)
+  (*   unfold not. *)
+  (*   intros. *)
+
   Lemma thm_1_4_c'' : forall (a b : R),
       division_ring R -> a <*> b = z -> a <> z -> b = z.
   Proof.
@@ -377,6 +388,43 @@ Section rings.
       intros; now apply subring_closed_add.
     Qed.
 
-    End subrings.
+  End subrings.
+
+  Definition domain (R: Ring) := commutative_ring R
+                              /\ division_ring R.
+
+
+  (* Exercise from homework *)
+  Theorem hw5_P2 : forall (a : R), domain R -> a <*> a = I -> a = I \/ a = inv I.
+  Proof.
+    intros a domR a2I.
+    destruct domR.
+    assert ((a <+> I) <*> (a <+> inv I) = z).
+    {
+      rewrite !mul_ldistr.
+      rewrite !mul_rdistr.
+      autorewrite with ring_scope.
+      rewrite <- (add_assoc _ (a <*> a) a _).
+      rewrite (add_assoc _ a (inv a) _).
+      autorewrite with ring_scope.
+      rewrite a2I.
+      now autorewrite with ring_scope.
+    }
+    pose proof (thm_1_4_c (a <+> I) (a <+> inv I) H0 H1).
+    destruct H2.
+    - right. rewrite <- (add_inverse_r _ a) in H2.
+      apply (f_equal (fun x => inv a <+> x)) in H2.
+      rewrite !add_assoc in H2.
+      autorewrite with ring_scope in H2.
+      rewrite H2.
+      now autorewrite with ring_scope.
+    - left. rewrite <- (add_inverse_r _ a) in H2.
+      apply (f_equal (fun x => inv a <+> x)) in H2.
+      rewrite !add_assoc in H2.
+      autorewrite with ring_scope in H2.
+      apply (f_equal inv) in H2.
+      autorewrite with ring_scope in H2.
+      now symmetry.
+  Qed.
     
 End rings.
