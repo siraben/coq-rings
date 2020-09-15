@@ -257,9 +257,10 @@ Section rings.
   Qed.
 
 
-  Definition is_ring_unit {R : Ring} (a : R) := a <> z.
+  Definition is_nonzero {R : Ring} (a : R) := a <> z.
+  Definition is_ring_unit {R : Ring} (a : R) := exists b, a <*> b = I.
   Definition division_ring (R: Ring) :=
-    forall (a : R), is_ring_unit a
+    forall (a : R), is_nonzero a
                -> exists b, a <*> b = (I (r := R)) /\ b <*> a = (I (r := R)).
 
   Definition commutative_ring (R: Ring) := is_commutative (mul (r := R)).
@@ -302,7 +303,7 @@ Section rings.
   Qed.
 
   Lemma coll_1_3_1 : forall (a b : R),
-      division_ring R -> is_ring_unit a -> a <*> b = z -> b = z.
+      division_ring R -> is_nonzero a -> a <*> b = z -> b = z.
   Proof.
     intros a b divRingR unitA abZ.
     unfold division_ring in divRingR.
@@ -311,7 +312,7 @@ Section rings.
   Qed.
 
   Lemma coll_1_3 : forall (a b c : R),
-      division_ring R -> is_ring_unit a -> a <*> b = a <*> c -> b = c.
+      division_ring R -> is_nonzero a -> a <*> b = a <*> c -> b = c.
   Proof.
     intros a b c divRingR unitA abEqac.
     unfold division_ring in divRingR.
@@ -426,5 +427,93 @@ Section rings.
       autorewrite with ring_scope in H2.
       now symmetry.
   Qed.
-    
+
+  Definition divides (a : R) (b : R) := exists c, a <*> c = b.
+
+  Theorem hw6_2a (a b c : R) :
+    commutative_ring R -> divides a b -> divides b c -> divides a c.
+  Proof.
+    intros.
+    unfold divides in *.
+    destruct H0, H1.
+    subst.
+    eexists (x <*> x0).
+    now rewrite mul_assoc.
+  Qed.
+
+  Theorem hw6_2b (a b c : R) :
+    commutative_ring R -> divides a b -> is_ring_unit c -> divides (a <*> c) b.
+  Proof.
+    intros.
+    unfold divides in *.
+    unfold is_ring_unit in H1.
+    destruct H0, H1.
+    subst.
+    exists (x0 <*> x).
+    rewrite <- (mul_assoc _ a c _).
+    rewrite (mul_assoc _ c x0 _).
+    rewrite H1.
+    now autorewrite with ring_scope.
+  Qed.
+
+  (* if a|b and b|a for non-zero a, and R is a domain, then there
+  exist units u and v in R, such that a = ub and b = va; *)
+
+  Theorem hw6_2c (a b : R) :
+    domain R -> is_nonzero a -> divides a b -> divides b a
+    ->  exists u v, a = u <*> b /\ b = v <*> a.
+  Proof.
+    intros.
+    unfold divides in *.
+    destruct H1, H2.
+    subst.
+    exists x0,  x.
+    split.
+    - destruct H.
+      rewrite <- H.
+      now symmetry.
+    - apply (proj1 H).
+  Qed.
+
+  Theorem hw6_2d (a b c : R) :
+    commutative_ring R -> divides a b -> divides (a <*> c) (b <*> c).
+  Proof.
+    intros.
+    unfold divides in *.
+    unfold commutative_ring in H.
+    destruct H0.
+    exists x.
+    rewrite <- mul_assoc.
+    rewrite (H c x).
+    rewrite mul_assoc.
+    now rewrite H0.
+  Qed.
+
+  (* e) if ac|bc , R is a domain, and c ̸= 0, then a|b. *)
+
+  Theorem hw6_2e (a b c : R) :
+    divides (a <*> c) (b <*> c) -> domain R -> is_nonzero c -> divides a b.
+  Proof.
+    intros.
+    unfold divides in *.
+    destruct H.
+    destruct H0.
+    unfold division_ring in H2.
+    pose proof (H2 c H1).
+    destruct H3.
+    destruct H3.
+    exists (c <*> x0 <*> x).
+    rewrite mul_assoc.
+    rewrite H3.
+    autorewrite with ring_scope.
+    apply (f_equal (fun x => x0 <*> x)) in H.
+    rewrite (H0 a c) in H.
+    rewrite (mul_assoc _ x0 _ _) in H.
+    rewrite (mul_assoc _ x0 c _) in H.
+    rewrite H4 in H.
+    rewrite (H0 b c) in H.
+    rewrite mul_assoc in H.
+    rewrite H4 in H.
+    now autorewrite with ring_scope in H.
+  Qed.
 End rings.
