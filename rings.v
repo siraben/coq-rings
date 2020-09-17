@@ -489,7 +489,7 @@ Section rings.
 
   Theorem hw6_2c (a b : R) :
     domain R -> is_nonzero a -> divides a b -> divides b a
-    ->  exists u v, a = u <*> b /\ b = v <*> a.
+    ->  exists u v, a = u <*> b /\ b = v <*> a /\ is_ring_unit u /\ is_ring_unit v.
   Proof.
     intros.
     unfold divides in *.
@@ -500,7 +500,17 @@ Section rings.
     - destruct H.
       rewrite <- H.
       now symmetry.
-    - apply (proj1 H).
+    - split.
+      + apply (proj1 H).
+      + unfold domain in H.
+        rewrite <- (mul_unit_r _ a) in H2 at 2.
+        rewrite <- mul_assoc in H2.
+        destruct H.
+        eapply ring_cancel in H2; try auto.
+        unfold is_ring_unit.
+        pose proof H2.
+        rewrite H in H3.
+        split; try ((now exists x) || (now exists x0)).
   Qed.
 
   Theorem hw6_2d (a b c : R) :
@@ -518,7 +528,6 @@ Section rings.
   Qed.
 
   (* e) if ac|bc , R is a domain, and c ̸= 0, then a|b. *)
-
   Theorem hw6_2e (a b c : R) :
     divides (a <*> c) (b <*> c) -> domain R -> is_nonzero c -> divides a b.
   Proof.
