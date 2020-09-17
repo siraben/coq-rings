@@ -38,7 +38,7 @@ Section ring_definitions.
     /\ is_commutative add
     /\ is_rdistr mul add
     /\ is_ldistr mul add.
-    
+
 End ring_definitions.
 
 Section rings.
@@ -58,7 +58,7 @@ Section rings.
       add_inverse_l : forall a, add (inv a) a = z;
       add_inverse_r : forall a, add a (inv a) = z;
       add_comm : forall a b, add a b = add b a;
-      
+
       mul_assoc : forall a b c, mul a (mul b c) = mul (mul a b) c;
       mul_unit_l : forall a, mul I a = a;
       mul_unit_r : forall a, mul a I = a;
@@ -115,7 +115,7 @@ Section rings.
     rewrite <- mul_ldistr.
     now autorewrite with ring_scope.
   Qed.
-  
+
   Hint Rewrite thm_1_1_1_2 : ring_scope.
 
   Lemma thm_1_1_2_1 : forall (a : R), inv (inv a) = a.
@@ -134,7 +134,7 @@ Section rings.
     apply H.
     now autorewrite with ring_scope.
   Qed.
-  
+
   Hint Rewrite thm_1_1_2_1 : ring_scope.
 
   Lemma thm_1_1_2_2_1 : forall (a b : R), a <*> (inv b) = inv (a <*> b).
@@ -223,7 +223,7 @@ Section rings.
     intros a n m o H.
     autorewrite with ring_scope. now rewrite <- H.
   Qed.
-  
+
   Lemma thm_1_1_4 : forall (a b : R) n,
       a <*> b = b <*> a
       -> (a <*> b) <^> n = a <^> n <*> b <^> n.
@@ -258,24 +258,31 @@ Section rings.
 
 
   Definition is_nonzero {R : Ring} (a : R) := a <> z.
-  Definition is_ring_unit {R : Ring} (a : R) := exists b, a <*> b = I.
+  Definition is_ring_unit {R : Ring} (a : R) :=
+    exists b, a <*> b = I /\ b <*> a = I.
   Definition division_ring (R: Ring) :=
-    forall (a : R), is_nonzero a
-               -> exists b, a <*> b = (I (r := R)) /\ b <*> a = (I (r := R)).
+    forall (a : R), is_nonzero a -> is_ring_unit a.
 
   Definition commutative_ring (R: Ring) := is_commutative (mul (r := R)).
 
-  Axiom thm_1_4_c : forall (a b : R),
-      division_ring R -> a <*> b = z -> a = z \/ b = z.
+  Axiom thm_1_4_c : forall (R : Ring),
+      division_ring R -> forall (a b : R), a <*> b = z -> a = z \/ b = z.
 
-  (* Lemma thm_1_4_c' : forall (a b : R), *)
-  (*     division_ring R -> a <> z /\ b <> z -> a <*> b <> z. *)
-  (* Proof. *)
-  (*   intros a b divRingR abNcancel. *)
-  (*   destruct abNcancel. *)
-  (*   unfold not. *)
-  (*   intros. *)
+  (* C' and C'' and C''' are logically equivalent to C *)
 
+  (* Every division ring satisfies C' *)
+  Lemma thm_1_4_c' : forall (a b : R),
+      division_ring R -> a <> z /\ b <> z -> a <*> b <> z.
+  Proof.
+    intros a b divRingR abNcancel.
+    destruct abNcancel.
+    unfold not.
+    intros.
+    pose proof (thm_1_4_c divRingR a b H1).
+    destruct H2; tauto.
+  Qed.
+
+  (* Every division ring satisfies C'' *)
   Lemma thm_1_4_c'' : forall (a b : R),
       division_ring R -> a <*> b = z -> a <> z -> b = z.
   Proof.
@@ -289,6 +296,7 @@ Section rings.
     now autorewrite with ring_scope.
   Qed.
 
+  (* Every division ring satisfies C''' *)
   Lemma thm_1_4_c''' : forall (a b : R),
       division_ring R -> a <*> b = z -> a <> z -> b = z.
   Proof.
@@ -391,9 +399,28 @@ Section rings.
 
   End subrings.
 
-  Definition domain (R: Ring) := commutative_ring R
-                              /\ division_ring R.
+  Definition C (R : Ring) := forall (a b : R), a <*> b = z -> a = z \/ b = z.
 
+  Definition domain (R: Ring) := commutative_ring R /\ C R.
+
+  Definition field (R : Ring) := commutative_ring R
+                                 /\ (forall (a : R), is_nonzero a -> is_ring_unit a).
+
+  Theorem ring_cancel : C R -> forall (a b c : R), a <> z -> a <*> b = a <*> c -> b = c.
+  Proof.
+    intros.
+    unfold C in H.
+    apply (f_equal (fun x => x <+> inv (a <*> c))) in H1.
+    autorewrite with ring_scope in H1.
+    rewrite <- (thm_1_1_2_2_1 a c) in H1.
+    rewrite <- mul_ldistr in H1.
+    pose proof (H a _ H1).
+    destruct H2.
+    - tauto.
+    - apply (f_equal (fun x => x <+> c)) in H2.
+      rewrite <- add_assoc in H2.
+      now autorewrite with ring_scope in H2.
+  Qed.
 
   (* Exercise from homework *)
   Theorem hw5_P2 : forall (a : R), domain R -> a <*> a = I -> a = I \/ a = inv I.
@@ -411,7 +438,7 @@ Section rings.
       rewrite a2I.
       now autorewrite with ring_scope.
     }
-    pose proof (thm_1_4_c (a <+> I) (a <+> inv I) H0 H1).
+    pose proof (H0 (a <+> I) (a <+> inv I) H1).
     destruct H2.
     - right. rewrite <- (add_inverse_r _ a) in H2.
       apply (f_equal (fun x => inv a <+> x)) in H2.
@@ -448,8 +475,9 @@ Section rings.
     unfold divides in *.
     unfold is_ring_unit in H1.
     destruct H0, H1.
-    subst.
+    destruct H1.
     exists (x0 <*> x).
+    subst.
     rewrite <- (mul_assoc _ a c _).
     rewrite (mul_assoc _ c x0 _).
     rewrite H1.
@@ -494,26 +522,13 @@ Section rings.
   Theorem hw6_2e (a b c : R) :
     divides (a <*> c) (b <*> c) -> domain R -> is_nonzero c -> divides a b.
   Proof.
-    intros.
-    unfold divides in *.
-    destruct H.
-    destruct H0.
-    unfold division_ring in H2.
-    pose proof (H2 c H1).
-    destruct H3.
-    destruct H3.
-    exists (c <*> x0 <*> x).
-    rewrite mul_assoc.
-    rewrite H3.
-    autorewrite with ring_scope.
-    apply (f_equal (fun x => x0 <*> x)) in H.
+    intros divACBC domR nonZC.
+    destruct divACBC.
+    destruct domR.
     rewrite (H0 a c) in H.
-    rewrite (mul_assoc _ x0 _ _) in H.
-    rewrite (mul_assoc _ x0 c _) in H.
-    rewrite H4 in H.
     rewrite (H0 b c) in H.
-    rewrite mul_assoc in H.
-    rewrite H4 in H.
-    now autorewrite with ring_scope in H.
+    rewrite <- mul_assoc in H.
+    apply ring_cancel in H; try auto.
+    now exists x.
   Qed.
 End rings.
