@@ -41,41 +41,22 @@ Section rings.
   Open Scope ring_scope.
 
   Variable (R : Ring.type).
+  Implicit Types a x y : R.
   Hint Rewrite (@addNr R) (@addrN R) (@addNr R) (@add0r R) (@addr0 R) : ring_scope.
   Hint Rewrite (@mul1r R) (@mulr1 R) : ring_scope.
 
-  Lemma thm_1_1_1_1 : forall (a : R), 0 * a = 0.
+  Lemma thm_1_1_1_1 a : 0 * a = 0.
   Proof.
-    intros a.
-    assert (H: forall (x : R), x + x = x -> x = 0).
-    {
-      intros x xAddx.
-      rewrite -xAddx.
-      rewrite -(addrN x).
-      rewrite -{3}xAddx.
-      rewrite -addrA.
-      rewrite (addrN x).
-      now autorewrite with ring_scope.
-    }
-    apply H.
-    rewrite -mulrDl.
-    now autorewrite with ring_scope.
+    have H x: x + x = x -> x = 0
+      by move=> xAddx; rewrite -xAddx -(addrN x) -{3}xAddx -addrA (addrN x) addr0.
+    by apply: H; rewrite -mulrDl addr0.
   Qed.
 
   Hint Rewrite thm_1_1_1_1 : ring_scope.
 
-  Lemma thm_1_1_1_2 : forall (a : R), a * 0 = 0.
-    intros a.
-    assert (H: forall (x : R), x + x = x -> x = 0).
-    {
-      intros x xAddx.
-      rewrite -xAddx.
-      rewrite -(addrN x).
-      rewrite -{3}xAddx.
-      rewrite -addrA.
-      rewrite (addrN x).
-      now autorewrite with ring_scope.
-    }
+  Lemma thm_1_1_1_2 a : a * 0 = 0.
+    have H x: x + x = x -> x = 0
+      by move=> xAddx; rewrite -xAddx -(addrN x) -{3}xAddx -addrA (addrN x) addr0.
     apply H.
     rewrite -mulrDr.
     now autorewrite with ring_scope.
@@ -83,9 +64,8 @@ Section rings.
 
   Hint Rewrite thm_1_1_1_2 : ring_scope.
 
-  Lemma thm_1_1_2_1 : forall (a : R), opp (opp a) = a.
+  Lemma thm_1_1_2_1 a : opp (opp a) = a.
   Proof.
-    intros a.
     assert (H: forall (x y : R), x + y = 0 -> y = opp x).
     {
       intros x y xyCancel.
@@ -153,12 +133,11 @@ Section rings.
 
   Notation "x <^> y" := (expt x y) (at level 25, left associativity).
 
-  Lemma thm_1_1_3_1 : forall (a : R) n m, expt a n * expt a m = expt a (n + m).
+  Lemma thm_1_1_3_1 a n m : expt a n * expt a m = expt a (n + m).
   Proof.
-    intros a n.
-    induction n; intros; simpl.
+    elim: n m => [| n IHn] /= m.
     - now autorewrite with ring_scope.
-    - rewrite -mulrA. now rewrite IHn.
+    - by rewrite -mulrA IHn.
   Qed.
 
   Hint Rewrite thm_1_1_3_1 : ring_scope.
@@ -170,9 +149,8 @@ Section rings.
 
   Hint Rewrite expt_I : ring_scope.
 
-  Lemma thm_1_1_3_2 : forall (a : R) n m, a <^> n <^> m = a <^> (n * m).
+  Lemma thm_1_1_3_2 a n : forall m, a <^> n <^> m = a <^> (n * m).
   Proof.
-    intros a n m.
     induction m; simpl.
     - now rewrite -mult_n_O.
     - rewrite IHm. autorewrite with ring_scope.
@@ -182,12 +160,9 @@ Section rings.
 
   Hint Rewrite thm_1_1_3_2 : ring_scope.
 
-  Lemma expt_reorder : forall (a : R) (n m o : nat),
+  Lemma expt_reorder a : forall (n m o : nat),
       n = plus m o -> a <^> n = a <^> m * a <^> o.
-  Proof.
-    intros a n m o H.
-    autorewrite with ring_scope. now rewrite -H.
-  Qed.
+  Proof. by move=>>; autorewrite with ring_scope; move <-. Qed.
 
   Lemma thm_1_1_4 : forall (a b : R) n,
       a * b = b * a
@@ -197,8 +172,8 @@ Section rings.
     induction n.
     - now autorewrite with ring_scope.
     - simpl.
-      rewrite -(mulrA a (a <^> n) _).
-      rewrite (mulrA (a <^> n) _ _).
+      rewrite -(mulrA a (a <^> n)).
+      rewrite (mulrA (a <^> n)).
       assert (H: forall n, a <^> n * b = b * a <^> n).
       {
         intros m.
@@ -316,9 +291,9 @@ Section rings.
   Qed.
 
   (* Exercise from homework *)
-  Theorem hw5_P2 : forall (a : R), domain -> a * a = 1 -> a = 1 \/ a = opp 1.
+  Theorem hw5_P2 a : domain -> a * a = 1 -> a = 1 \/ a = opp 1.
   Proof.
-    intros a domR a2I.
+    intros domR a2I.
     destruct domR.
     assert ((a + 1) * (a + opp 1) = 0).
     {
