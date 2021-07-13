@@ -45,82 +45,58 @@ Section rings.
   Hint Rewrite (@addNr R) (@addrN R) (@addNr R) (@add0r R) (@addr0 R) : ring_scope.
   Hint Rewrite (@mul1r R) (@mulr1 R) : ring_scope.
 
-  Lemma thm_1_1_1_1 a : 0 * a = 0.
+  (* thm_1_1_1_1 *)
+  Lemma mul0r a : 0 * a = 0.
   Proof.
     have H x: x + x = x -> x = 0
       by move=> xAddx; rewrite -xAddx -(addrN x) -{3}xAddx -addrA (addrN x) addr0.
     by apply: H; rewrite -mulrDl addr0.
   Qed.
 
-  Hint Rewrite thm_1_1_1_1 : ring_scope.
+  Hint Rewrite mul0r : ring_scope.
 
-  Lemma thm_1_1_1_2 a : a * 0 = 0.
+  (* thm_1_1_1_2 *)
+  Lemma mulr0 a : a * 0 = 0.
     have H x: x + x = x -> x = 0
       by move=> xAddx; rewrite -xAddx -(addrN x) -{3}xAddx -addrA (addrN x) addr0.
-    apply H.
-    rewrite -mulrDr.
-    now autorewrite with ring_scope.
+    by apply: H; rewrite -mulrDr addr0.
   Qed.
 
-  Hint Rewrite thm_1_1_1_2 : ring_scope.
+  Hint Rewrite mulr0 : ring_scope.
 
-  Lemma thm_1_1_2_1 a : opp (opp a) = a.
+  (* thm_1_1_2_1 *)
+  Lemma opprK a : opp (opp a) = a.
   Proof.
-    assert (H: forall (x y : R), x + y = 0 -> y = opp x).
-    {
-      intros x y xyCancel.
-      rewrite -(add0r (opp x)).
-      rewrite -xyCancel.
-      rewrite (addrC x y).
-      rewrite -addrA.
-      now autorewrite with ring_scope.
-    }
-    symmetry.
-    apply H.
-    now autorewrite with ring_scope.
+    have H x y : x + y = 0 -> y = opp x
+      by move=> H; rewrite -(add0r (opp x)) -H (addrC x y) -addrA addrN addr0.
+    by symmetry; apply: H; rewrite addNr.
   Qed.
 
-  Hint Rewrite thm_1_1_2_1 : ring_scope.
+  Hint Rewrite opprK : ring_scope.
 
-  Lemma thm_1_1_2_2_1 : forall (a b : R), a * (opp b) = opp (a * b).
+  Lemma thm_1_1_2_2_1 a b : a * (opp b) = opp (a * b).
   Proof.
-    intros a b.
-    assert (H: forall (x y : R), x + y = 0 -> y = opp x).
-    {
-      intros x y xyCancel.
-      rewrite -(addr0 (opp x)).
-      rewrite -xyCancel.
-      rewrite addrA.
-      now autorewrite with ring_scope.
-    }
+    have H x y : x + y = 0 -> y = opp x
+      by move=> H; rewrite -(add0r (opp x)) -H (addrC x y) -addrA addrN addr0.
     apply H.
     rewrite -mulrDr.
-    now autorewrite with ring_scope.
+    by autorewrite with ring_scope.
   Qed.
 
   Hint Rewrite thm_1_1_2_2_1 : ring_scope.
 
-  Lemma thm_1_1_2_2_2 : forall (a b : R), opp a * b = opp (a * b).
+  Lemma thm_1_1_2_2_2 a b : opp a * b = opp (a * b).
   Proof.
-    intros a b.
-    assert (H: forall (x y : R), x + y = 0 -> y = opp x).
-    {
-      intros x y xyCancel.
-      rewrite -(addr0 (opp x)).
-      rewrite -xyCancel.
-      rewrite addrA.
-      now autorewrite with ring_scope.
-    }
-    apply H.
-    rewrite -mulrDl.
-    now autorewrite with ring_scope.
+    have H x y : x + y = 0 -> y = opp x
+      by move=> H; rewrite -(add0r (opp x)) -H (addrC x y) -addrA addrN addr0.
+    by apply: H; rewrite -mulrDl addrN mul0r.
   Qed.
 
   Hint Rewrite thm_1_1_2_2_2 : ring_scope.
 
-  Lemma thm_1_1_2_3 : forall (a b : R), opp a * opp b = a * b.
+  Lemma thm_1_1_2_3 a b : opp a * opp b = a * b.
   Proof.
-    intros a b; now autorewrite with ring_scope.
+    by autorewrite with ring_scope.
   Qed.
 
   Hint Rewrite thm_1_1_2_3 : ring_scope.
@@ -136,26 +112,25 @@ Section rings.
   Lemma thm_1_1_3_1 a n m : expt a n * expt a m = expt a (n + m).
   Proof.
     elim: n m => [| n IHn] /= m.
-    - now autorewrite with ring_scope.
+    - by autorewrite with ring_scope.
     - by rewrite -mulrA IHn.
   Qed.
 
   Hint Rewrite thm_1_1_3_1 : ring_scope.
 
-  Lemma expt_I : forall n, expt 1 n = 1.
+  Lemma expt_I n : expt 1 n = 1.
   Proof.
-    induction n; simpl; now autorewrite with ring_scope.
+    by elim n => [|?] /=; autorewrite with ring_scope.
   Qed.
 
   Hint Rewrite expt_I : ring_scope.
 
   Lemma thm_1_1_3_2 a n : forall m, a <^> n <^> m = a <^> (n * m).
   Proof.
-    induction m; simpl.
-    - now rewrite -mult_n_O.
+    elim=> [| m IHm] /=.
+    - by rewrite -mult_n_O.
     - rewrite IHm. autorewrite with ring_scope.
-      rewrite -mult_n_Sm.
-      now rewrite Nat.add_comm.
+      by rewrite -mult_n_Sm Nat.add_comm.
   Qed.
 
   Hint Rewrite thm_1_1_3_2 : ring_scope.
@@ -170,7 +145,7 @@ Section rings.
   Proof.
     intros a b n abComm.
     induction n.
-    - now autorewrite with ring_scope.
+    - by autorewrite with ring_scope.
     - simpl.
       rewrite -(mulrA a (a <^> n)).
       rewrite (mulrA (a <^> n)).
@@ -178,7 +153,7 @@ Section rings.
       {
         intros m.
         induction m.
-        - now autorewrite with ring_scope.
+        - by autorewrite with ring_scope.
         - rewrite (expt_reorder a m 1).
           by rewrite Nat.add_1_r.
           simpl (a <^> 1).
@@ -187,31 +162,31 @@ Section rings.
           rewrite -IHm.
           rewrite -(mulrA _ b a).
           rewrite -abComm.
-          now rewrite mulrA.
+          by rewrite mulrA.
       }
       rewrite H.
       rewrite -(mulrA b _ _).
       rewrite (mulrA a b _).
-      now rewrite IHn.
+      by rewrite IHn.
   Qed.
 
 
   Definition is_nonzero (a : R) := a <> 0.
   Definition is_ring_unit (a : R) := exists b, a * b = 1 /\ b * a = 1.
-  Definition division_ring := forall (a : R), is_nonzero a -> is_ring_unit a.
+  Definition divRing := forall (a : R), is_nonzero a -> is_ring_unit a.
 
-  Definition commutative_ring := commutative (@mul R).
+  Definition comRing := commutative (@mul R).
 
-  Axiom thm_1_4_c : division_ring -> forall (a b : R), a * b = 0 -> a = 0 \/ b = 0.
+  Axiom thm_1_4_c : divRing -> forall (a b : R), a * b = 0 -> a = 0 \/ b = 0.
 
   (* C' and C'' and C''' are logically equivalent to C *)
 
   (* Every division ring satisfies C' *)
   Lemma thm_1_4_c' : forall (a b : R),
-      division_ring -> a <> 0 /\ b <> 0 -> a * b <> 0.
+      divRing -> a <> 0 /\ b <> 0 -> a * b <> 0.
   Proof.
-    intros a b divRingR abNcancel.
-    destruct abNcancel.
+    intros a b divRingR abNK.
+    destruct abNK.
     unfold not.
     intros.
     pose proof (thm_1_4_c divRingR a b H1).
@@ -220,46 +195,46 @@ Section rings.
 
   (* Every division ring satisfies C'' *)
   Lemma thm_1_4_c'' : forall (a b : R),
-      division_ring -> a * b = 0 -> a <> 0 -> b = 0.
+      divRing -> a * b = 0 -> a <> 0 -> b = 0.
   Proof.
     intros a b divRingR abCancel aNz.
-    unfold division_ring in divRingR.
+    unfold divRing in divRingR.
     destruct (divRingR a aNz) as [x [axI xaI]].
     rewrite -(mul1r b).
     rewrite -xaI.
     rewrite -mulrA.
     rewrite abCancel.
-    now autorewrite with ring_scope.
+    by autorewrite with ring_scope.
   Qed.
 
   (* Every division ring satisfies C''' *)
   Lemma thm_1_4_c''' : forall (a b : R),
-      division_ring -> a * b = 0 -> a <> 0 -> b = 0.
+      divRing -> a * b = 0 -> a <> 0 -> b = 0.
   Proof.
     intros a b divRingR abCancel aNz.
-    unfold division_ring in divRingR.
+    unfold divRing in divRingR.
     destruct (divRingR a aNz) as [x [axI xaI]].
     rewrite -(mul1r b).
     rewrite -xaI.
     rewrite -mulrA.
     rewrite abCancel.
-    now autorewrite with ring_scope.
+    by autorewrite with ring_scope.
   Qed.
 
   Lemma coll_1_3_1 : forall (a b : R),
-      division_ring -> is_nonzero a -> a * b = 0 -> b = 0.
+      divRing -> is_nonzero a -> a * b = 0 -> b = 0.
   Proof.
     intros a b divRingR unitA abZ.
-    unfold division_ring in divRingR.
+    unfold divRing in divRingR.
     destruct (divRingR a unitA) as [aInv [abI baI]].
-    apply thm_1_4_c'' with (a := a); easy.
+    by apply thm_1_4_c'' with (a := a).
   Qed.
 
   Lemma coll_1_3 : forall (a b c : R),
-      division_ring -> is_nonzero a -> a * b = a * c -> b = c.
+      divRing -> is_nonzero a -> a * b = a * c -> b = c.
   Proof.
     intros a b c divRingR unitA abEqac.
-    unfold division_ring in divRingR.
+    unfold divRing in divRingR.
     destruct (divRingR a unitA) as [aInv [abI baI]].
     rewrite -(mul1r b).
     rewrite -(mul1r c).
@@ -270,11 +245,11 @@ Section rings.
 
   Definition C := forall (a b : R), a * b = 0 -> a = 0 \/ b = 0.
 
-  Definition domain := commutative_ring /\ C.
+  Definition domain := comRing /\ C.
 
-  Definition field := commutative_ring /\ (forall (a : R), is_nonzero a -> is_ring_unit a).
+  Definition field := comRing /\ (forall (a : R), is_nonzero a -> is_ring_unit a).
 
-  Theorem ring_cancel : C -> forall (a b c : R), a <> 0 -> a * b = a * c -> b = c.
+  Theorem ring_K : C -> forall (a b c : R), a <> 0 -> a * b = a * c -> b = c.
   Proof.
     intros.
     unfold C in H.
@@ -287,7 +262,7 @@ Section rings.
     - tauto.
     - apply (f_equal (fun x => x + c)) in H2.
       rewrite -addrA in H2.
-      now autorewrite with ring_scope in H2.
+      by autorewrite with ring_scope in H2.
   Qed.
 
   (* Exercise from homework *)
@@ -304,7 +279,7 @@ Section rings.
       rewrite (addrA a (opp a) _).
       autorewrite with ring_scope.
       rewrite a2I.
-      now autorewrite with ring_scope.
+      by autorewrite with ring_scope.
     }
     pose proof (H0 (a + 1) (a + opp 1) H1).
     destruct H2.
@@ -313,31 +288,31 @@ Section rings.
       rewrite !addrA in H2.
       autorewrite with ring_scope in H2.
       rewrite H2.
-      now autorewrite with ring_scope.
+      by autorewrite with ring_scope.
     - left. rewrite -(addrN a) in H2.
       apply (f_equal (fun x => opp a + x)) in H2.
       rewrite !addrA in H2.
       autorewrite with ring_scope in H2.
       apply (f_equal opp) in H2.
       autorewrite with ring_scope in H2.
-      now symmetry.
+      by symmetry.
   Qed.
 
   Definition divides (a : R) (b : R) := exists c, a * c = b.
 
   Theorem hw6_2a (a b c : R) :
-    commutative_ring -> divides a b -> divides b c -> divides a c.
+    comRing -> divides a b -> divides b c -> divides a c.
   Proof.
     intros.
     unfold divides in *.
     destruct H0, H1.
     subst.
     eexists (x * x0).
-    now rewrite mulrA.
+    by rewrite mulrA.
   Qed.
 
   Theorem hw6_2b (a b c : R) :
-    commutative_ring -> divides a b -> is_ring_unit c -> divides (a * c) b.
+    comRing -> divides a b -> is_ring_unit c -> divides (a * c) b.
   Proof.
     intros.
     unfold divides in *.
@@ -349,7 +324,7 @@ Section rings.
     rewrite -(mulrA a c _).
     rewrite (mulrA c x0 _).
     rewrite H1.
-    now autorewrite with ring_scope.
+    by autorewrite with ring_scope.
   Qed.
 
   (* if a|b and b|a for non-zero a, and R is a domain, then there
@@ -367,32 +342,32 @@ Section rings.
     split.
     - destruct H.
       rewrite -H.
-      now symmetry.
+      by symmetry.
     - split.
       + apply (proj1 H).
       + unfold domain in H.
         rewrite -{2}(mulr1 a) in H2.
         rewrite -mulrA in H2.
         destruct H.
-        eapply ring_cancel in H2; try auto.
+        eapply ring_K in H2; try auto.
         unfold is_ring_unit.
         pose proof H2.
         rewrite H in H3.
-        split; try ((now exists x) || (now exists x0)).
+        split; try ((by exists x) || (by exists x0)).
   Qed.
 
   Theorem hw6_2d (a b c : R) :
-    commutative_ring -> divides a b -> divides (a * c) (b * c).
+    comRing -> divides a b -> divides (a * c) (b * c).
   Proof.
     intros.
     unfold divides in *.
-    unfold commutative_ring in H.
+    unfold comRing in H.
     destruct H0.
     exists x.
     rewrite -mulrA.
     rewrite (H c x).
     rewrite mulrA.
-    now rewrite H0.
+    by rewrite H0.
   Qed.
 
   (* e) if ac|bc , R is a domain, and c ̸= 0, then a|b. *)
@@ -405,7 +380,7 @@ Section rings.
     rewrite (H0 a c) in H.
     rewrite (H0 b c) in H.
     rewrite -mulrA in H.
-    apply ring_cancel in H; try auto.
-    now exists x.
+    apply ring_K in H; try auto.
+    by exists x.
   Qed.
 End rings.
