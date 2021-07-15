@@ -26,6 +26,12 @@ HB.mixin Record IsRing R of Monoid R := {
 }.
 HB.structure Definition Ring := { R of IsRing R & IsMonoid R }.
 
+HB.mixin Record IsComRing R of Ring R := {
+  mulrC : @commutative R R mul;
+}.
+HB.structure Definition ComRing := { R of IsComRing R & IsRing R & IsMonoid R }.
+
+
 Section rings.
   Declare Scope ring_scope.
 
@@ -298,17 +304,12 @@ Section rings.
       by symmetry.
   Qed.
 
-  Definition divides (a : R) (b : R) := exists c, a * c = b.
+  Definition divides {R : Ring.type} (a : R) (b : R) := exists c, a * c = b.
 
-  Theorem hw6_2a (a b c : R) :
-    comRing -> divides a b -> divides b c -> divides a c.
+  Theorem hw6_2a (Rc : ComRing.type) (a b c : Rc) :
+    divides a b -> divides b c -> divides a c.
   Proof.
-    intros.
-    unfold divides in *.
-    destruct H0, H1.
-    subst.
-    eexists (x * x0).
-    by rewrite mulrA.
+    by move=> [d adb] [e be]; exists (d * e); rewrite mulrA adb.
   Qed.
 
   Theorem hw6_2b (a b c : R) :
@@ -356,18 +357,10 @@ Section rings.
         split; try ((by exists x) || (by exists x0)).
   Qed.
 
-  Theorem hw6_2d (a b c : R) :
-    comRing -> divides a b -> divides (a * c) (b * c).
+  Theorem hw6_2d (Rc : ComRing.type) (a b c : Rc) :
+    divides a b -> divides (a * c) (b * c).
   Proof.
-    intros.
-    unfold divides in *.
-    unfold comRing in H.
-    destruct H0.
-    exists x.
-    rewrite -mulrA.
-    rewrite (H c x).
-    rewrite mulrA.
-    by rewrite H0.
+    by move=> [x axb]; exists x; rewrite /divides -mulrA -(mulrC x c) mulrA axb.
   Qed.
 
   (* e) if ac|bc , R is a domain, and c ̸= 0, then a|b. *)
